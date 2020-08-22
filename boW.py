@@ -28,7 +28,9 @@ class BoW:
 
     def seq2idx(self, s):
         words = s if type(s) == list else s.split(' ')
-        return [self.word2index[word] for word in words]
+        idx = [self.word2index[word] for word in words]
+        idx.append(EOS_token)
+        return idx
     
 
 
