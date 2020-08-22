@@ -26,5 +26,11 @@ class BoW:
         else:
             self.word2count[word] += 1
 
-
+    def seq2idx(self, s):
+        words = s if type(s) == list else s.split(' ')
+        return [self.word2index[word] for word in words]
     
+
+
+
+        
