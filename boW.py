@@ -13,7 +13,8 @@ class BoW:
         self.n_words = 2  # Count SOS and EOS
 
     def addSentence(self, sentence):
-        for word in sentence.split(' '):
+        words = sentence if type(sentence) == list else sentence.split(' ')
+        for word in words:
             self.addWord(word)
 
     def addWord(self, word):
