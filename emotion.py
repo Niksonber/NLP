@@ -3,14 +3,17 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score, recall_score, roc_auc_score, roc_curve, confusion_matrix, accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn import svm, preprocessing
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 
 
 from dataHandler import DataHandler
+from boW import EOS_token
 
 RSEED = 50
-SIZE = 20
+SIZE = 10
 NCLASS = 3
+TFIDF = False
+NORMALIZE = False
 
 d = DataHandler()
 d.createDictionary()
@@ -18,9 +21,11 @@ d.createDictionary()
 #prepare data
 data = d.readDataPreproc(pre=True)[1:]
 
-x = [d.askDictionary.seq2idx(xi[1])+[1]*(SIZE-len(xi[1])-1) for xi in data]
+x = [d.askDictionary.seq2tensor(xi[1], tfidf=TFIDF) for xi in data]
 x = np.array(x)
-#x = preprocessing.normalize(x)
+
+if NORMALIZE:
+    x = preprocessing.normalize(x)
 
 y = [0 if yi[2]=="alegria" else 1 if yi[2]=="neutro" else 2 for yi in data]
 if NCLASS == 3:
@@ -59,6 +64,10 @@ model_gnb = GaussianNB()
 model_gnb.fit(x_train, y_train)
 y_pred_gnb = model_gnb.predict(x_test)
 
+model_mnb = MultinomialNB()
+model_mnb.fit(x_train, y_train)
+y_pred_mnb = model_mnb.predict(x_test)
+
 
 print('\nAcuracia RF {:.2f}%'.format(accuracy_score(y_pred_rf, y_test)*100))
 cm = confusion_matrix(y_test, y_pred_rf)
@@ -70,4 +79,8 @@ print(cm)
 
 print('\nAcuracia GNB {:.2f}%'.format(accuracy_score(y_pred_gnb, y_test)*100))
 cm = confusion_matrix(y_test, y_pred_gnb)
+print(cm)
+
+print('\nAcuracia MNB {:.2f}%'.format(accuracy_score(y_pred_mnb, y_test)*100))
+cm = confusion_matrix(y_test, y_pred_mnb)
 print(cm)

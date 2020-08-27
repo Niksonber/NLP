@@ -30,7 +30,7 @@ class DataHandler:
     # Lowercase, trim, and remove non-letter characters
     def normalize(self, s):
         s = self.unicodeToAscii(s.lower().strip())
-        s = re.sub(r"([.!?])", r" \1", s)
+        s = re.sub(r"([.!?])", r" ", s)
         s = re.sub(r"[^a-zA-Z.!?]+", r" ", s)
         return s
 
