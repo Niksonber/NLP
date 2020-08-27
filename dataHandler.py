@@ -40,12 +40,22 @@ class DataHandler:
         #remove stopwords
         words = [w for w in words if not w in self._stopWords]
         #stem 
-        stemmed = [self._porter.stem(word) for word in words[:100]]
+        stemmed = [self._porter.stem(word) for word in words]
         return stemmed
 
     def readData(self):
         with open('dataset.csv', 'rt', encoding='utf-8') as f:
             data = list(csv.reader(f))
+        return data
+
+    def readDataPreproc(self, pre=False):
+        data = self.readData()
+
+        data = [[self.preProcess(d[0]), \
+                 self.normalize(d[1]), d[2]] for d in data] \
+                if not pre else \
+                [[self.preProcess(d[0]), \
+                self.preProcess(d[1]), d[2]] for d in data]                    
         return data
 
     def createDictionary(self):
