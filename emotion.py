@@ -14,6 +14,7 @@ SIZE = 10
 NCLASS = 3
 TFIDF = False
 NORMALIZE = False
+np.random.seed(RSEED)
 
 d = DataHandler()
 d.createDictionary()
@@ -27,12 +28,12 @@ x = np.array(x)
 if NORMALIZE:
     x = preprocessing.normalize(x)
 
-y = [0 if yi[2]=="alegria" else 1 if yi[2]=="neutro" else 2 for yi in data]
 if NCLASS == 3:
     y = [0 if yi[2]=="alegria" else 1 if yi[2]=="neutro" else 2 for yi in data]
 else:
     y = [0 if yi[2]=="alegria" else 1 for yi in data]
 y=np.array(y)
+
 n0 = np.sum(y==0)
 n1 = np.sum(y==1)
 n2 = np.sum(y==2)
@@ -43,7 +44,7 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_
 
 # train RF
 #######################################
-model = RandomForestClassifier(n_estimators=8, max_depth = 4,
+model = RandomForestClassifier(n_estimators=100, max_depth = 70,
 							   random_state=RSEED, verbose = 0)
 
 model.fit(x_train, y_train)
@@ -53,7 +54,7 @@ y_pred_rf = model.predict(x_test)
 # train SVM 
 #######################################
 #model_svm = svm.SVC(kernel='linear', C=0.01, verbose=True)
-model_svm = svm.SVC(kernel='rbf', C=48, gamma=0.0002, random_state=RSEED)
+model_svm = svm.SVC(kernel='rbf', C=30, gamma=0.2, random_state=RSEED)
 model_svm.fit(x_train, y_train)
 y_pred_svm = model_svm.predict(x_test)
 

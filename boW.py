@@ -35,8 +35,9 @@ class BoW:
     def seq2tensor(self, s, tfidf=False):
         indx = self.seq2idx(s)
         tensor = [0]*(self.n_words)
+        #is not tfidf, but tfdf
         for i in indx:
-            tensor[i] += 1.0 if not tfidf else 1.0/self.word2count[self.index2word[i]]
+            tensor[i] += 1.0 if not tfidf else self.word2count[self.index2word[i]]/self.n_words 
         return tensor
 
 
