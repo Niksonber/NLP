@@ -8,7 +8,7 @@ class BoW:
     def __init__(self, name):
         self.name = name
         self.word2index = {}
-        self.word2count = {}
+        self.word2count = {"SOS":1,  "EOS":1}
         self.index2word = {0: "SOS", 1: "EOS"}
         self.n_words = 2  # Count SOS and EOS
 
@@ -32,6 +32,12 @@ class BoW:
         idx.append(EOS_token)
         return idx
     
+    def seq2tensor(self, s, tfidf=False):
+        indx = self.seq2idx(s)
+        tensor = [0]*(self.n_words)
+        for i in indx:
+            tensor[i] += 1.0 if not tfidf else 1.0/self.word2count[self.index2word[i]]
+        return tensor
 
 
 
