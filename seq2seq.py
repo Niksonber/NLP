@@ -157,7 +157,7 @@ class Seq2Seq(nn.Module):
 
     def trainIters(self, pairs, n_iters, print_every=1000, plot_every=100, learning_rate=0.01):
         start = time.time()
-        plot_losses = []
+        self.plot_losses = []
         print_loss_total = 0  # Reset every print_every
         plot_loss_total = 0  # Reset every plot_every
 
@@ -187,10 +187,10 @@ class Seq2Seq(nn.Module):
 
             if iter % plot_every == 0:
                 plot_loss_avg = plot_loss_total / plot_every
-                plot_losses.append(plot_loss_avg)
+                self.plot_losses.append(plot_loss_avg)
                 plot_loss_total = 0
 
-        showPlot(plot_losses)
+        showPlot(self.plot_losses, title="Loss", axis=["Milhares de iterações", "loss"])
 
     def evaluate(self, sentence, max_length=MAX_LENGTH):
         with torch.no_grad():
@@ -256,6 +256,7 @@ if __name__=='__main__':
 
     if isfile(PATH):
         s = torch.load(PATH)
+        showPlot(s.plot_losses, title="Loss", axis=["Milhares de iterações", "loss"])
     else:
         s.trainIters(pairs, 10000, print_every=5000)
         torch.save(s.state_dict(), "disc_" + PATH)
