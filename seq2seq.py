@@ -260,7 +260,7 @@ if __name__=='__main__':
     if isfile(PATH):
         s = torch.load(PATH)
     else:
-        s.trainIters(pairs, 10000, print_every=5000)
+        s.trainIters(pairs, 75000, print_every=5000)
         torch.save(s.state_dict(), "disc_" + PATH)
         torch.save(s, PATH)
 
