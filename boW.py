@@ -1,5 +1,6 @@
 # based on https://github.com/pytorch/tutorials/blob/master/intermediate_source/seq2seq_translation_tutorial.py
 # adapted by nikson
+from difflib import get_close_matches
 
 SOS_token = 0
 EOS_token = 1
@@ -28,7 +29,8 @@ class BoW:
 
     def seq2idx(self, s):
         words = s if type(s) == list else s.split(' ')
-        idx = [self.word2index[word] for word in words]
+        idx = [self.word2index[word] if word in self.word2index else \
+               self.word2index[get_close_matches(word, self.word2index)[0]] for word in words]
         idx.append(EOS_token)
         return idx
     
