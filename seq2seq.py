@@ -2,6 +2,8 @@
 # adapted by nikson
 
 import random
+import time
+from os.path import isfile
 
 import torch
 import torch.nn as nn
@@ -10,8 +12,11 @@ import torch.nn.functional as F
 
 from utills import showPlot, asMinutes, timeSince, showAttention, tensorsFromPair, idx2tensor
 from dataHandler import DataHandler
+from boW import SOS_token, EOS_token
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+MAX_LENGTH = 10
+PATH = "trained_model.pt"
 
 class EncoderRNN(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -88,12 +93,13 @@ class AttnDecoderRNN(nn.Module):
     def initHidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=device)
     
-class Seq2Seq:
+class Seq2Seq(nn.Module):
     def __init__(self, input_lang, output_lang, hidden_size=256, teacher_forcing_ratio=0.5):
+        super(Seq2Seq, self).__init__()
         self.hidden_size = hidden_size
         self.teacher_forcing_ratio = teacher_forcing_ratio
         self.input_lang = input_lang
-        self.output_lang = input_lang
+        self.output_lang = output_lang
 
         self.encoder = EncoderRNN(input_lang.n_words, hidden_size).to(device)
         self.decoder = AttnDecoderRNN(hidden_size, output_lang.n_words, dropout_p=0.1).to(device)
@@ -112,7 +118,7 @@ class Seq2Seq:
         loss = 0
 
         for ei in range(input_length):
-            encoder_output, encoder_hidden = encoder(
+            encoder_output, encoder_hidden = self.encoder(
                 input_tensor[ei], encoder_hidden)
             encoder_outputs[ei] = encoder_output[0, 0]
 
@@ -133,7 +139,7 @@ class Seq2Seq:
         else:
             # Without teacher forcing: use its own predictions as the next input
             for di in range(target_length):
-                decoder_output, decoder_hidden, decoder_attention = decoder(
+                decoder_output, decoder_hidden, decoder_attention = self.decoder(
                     decoder_input, decoder_hidden, encoder_outputs)
                 topv, topi = decoder_output.topk(1)
                 decoder_input = topi.squeeze().detach()  # detach from history as input
@@ -158,8 +164,9 @@ class Seq2Seq:
         encoder_optimizer = optim.SGD(self.encoder.parameters(), lr=learning_rate)
         decoder_optimizer = optim.SGD(self.decoder.parameters(), lr=learning_rate)
         pair = random.choice(pairs)
-        training_pairs = [tensorsFromPair(self.input_lang.seq2idx(pair[0]), \
-                                          self.output_lang.seq2idx(pair[1])) \
+        print(pair)
+        training_pairs = [tensorsFromPair([self.input_lang.seq2idx(pair[0]), \
+                                          self.output_lang.seq2idx(pair[1])], device) \
                         for i in range(n_iters)]
         criterion = nn.NLLLoss()
 
@@ -168,7 +175,7 @@ class Seq2Seq:
             input_tensor = training_pair[0]
             target_tensor = training_pair[1]
 
-            loss = train(input_tensor, target_tensor, encoder_optimizer, decoder_optimizer, criterion)
+            loss = self.train(input_tensor, target_tensor, encoder_optimizer, decoder_optimizer, criterion)
             print_loss_total += loss
             plot_loss_total += loss
 
@@ -187,7 +194,7 @@ class Seq2Seq:
 
     def evaluate(self, sentence, max_length=MAX_LENGTH):
         with torch.no_grad():
-            input_tensor = idx2tensor(self.input_lang.seq2idx(sentence))
+            input_tensor = idx2tensor(self.input_lang.seq2idx(sentence), device)
             input_length = input_tensor.size()[0]
             encoder_hidden = self.encoder.initHidden()
 
@@ -214,7 +221,7 @@ class Seq2Seq:
                     decoded_words.append('<EOS>')
                     break
                 else:
-                    decoded_words.append(output_lang.index2word[topi.item()])
+                    decoded_words.append(self.output_lang.index2word[topi.item()])
 
                 decoder_input = topi.squeeze().detach()
 
@@ -226,7 +233,7 @@ class Seq2Seq:
             pair = random.choice(pairs)
             print('>', pair[0])
             print('=', pair[1])
-            output_words, attentions = evaluate(pair[0])
+            output_words, attentions = self.evaluate(pair[0])
             output_sentence = ' '.join(output_words)
             print('<', output_sentence)
             print('')
@@ -249,19 +256,26 @@ if __name__=='__main__':
     pairs = d.readDataPreproc()
 
     s = Seq2Seq(d.askDictionary, d.ansDictionary)
-    s.trainIters(pairs, 75000, print_every=5000)
 
+    if isfile(PATH):
+        s = torch.load(PATH)
+    else:
+        s.trainIters(pairs, 10000, print_every=5000)
+        torch.save(s.state_dict(), "disc_" + PATH)
+        torch.save(s, PATH)
 
-    s.evaluateRandomly()
+    s.evaluateRandomly(pairs)
 
     # output_words, attentions = evaluate(
     #     encoder1, attn_decoder1, "je suis trop froid .")
     # plt.matshow(attentions.numpy())
+    print(pairs[0][0])
+    print(d.preProcess("Oi"))
+    s.evaluateAndShowAttention(d.preProcess("Oi"))
 
-    s.evaluateAndShowAttention("elle a cinq ans de moins que moi .")
+    s.evaluateAndShowAttention(d.preProcess("vamos brincar?"))
 
-    s.evaluateAndShowAttention("elle est trop petit .")
+    s.evaluateAndShowAttention(d.preProcess("Descreva um dia incrivel"))
 
-    s.evaluateAndShowAttention("je ne crains pas de mourir .")
+    s.evaluateAndShowAttention(d.preProcess("Por que o gelo derrete?"))
 
-    s.evaluateAndShowAttention("c est un jeune directeur plein de talent .")
