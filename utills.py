@@ -34,6 +34,7 @@ def showPlot(points):
     loc = ticker.MultipleLocator(base=0.2)
     ax.yaxis.set_major_locator(loc)
     plt.plot(points)
+    plt.show()
 
 def showAttention(input_sentence, output_words, attentions):
     # Set up figure with colorbar

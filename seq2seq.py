@@ -163,11 +163,11 @@ class Seq2Seq(nn.Module):
 
         encoder_optimizer = optim.SGD(self.encoder.parameters(), lr=learning_rate)
         decoder_optimizer = optim.SGD(self.decoder.parameters(), lr=learning_rate)
-        pair = random.choice(pairs)
-        print(pair)
-        training_pairs = [tensorsFromPair([self.input_lang.seq2idx(pair[0]), \
-                                          self.output_lang.seq2idx(pair[1])], device) \
-                        for i in range(n_iters)]
+        training_pairs = []
+        for i in range(n_iters):
+            pair = random.choice(pairs)
+            training_pairs.append(tensorsFromPair([self.input_lang.seq2idx(pair[0]), \
+                                          self.output_lang.seq2idx(pair[1])], device))
         criterion = nn.NLLLoss()
 
         for iter in range(1, n_iters + 1):
@@ -248,9 +248,6 @@ class Seq2Seq(nn.Module):
 
 if __name__=='__main__':
 
-    # hidden_size = 256
-    # encoder1 = EncoderRNN(input_lang.n_words, hidden_size).to(device)
-    # attn_decoder1 = AttnDecoderRNN(hidden_size, output_lang.n_words, dropout_p=0.1).to(device)
     d = DataHandler()
     d.createDictionary()
     pairs = d.readDataPreproc()
@@ -260,17 +257,12 @@ if __name__=='__main__':
     if isfile(PATH):
         s = torch.load(PATH)
     else:
-        s.trainIters(pairs, 75000, print_every=5000)
+        s.trainIters(pairs, 10000, print_every=5000)
         torch.save(s.state_dict(), "disc_" + PATH)
         torch.save(s, PATH)
 
     s.evaluateRandomly(pairs)
 
-    # output_words, attentions = evaluate(
-    #     encoder1, attn_decoder1, "je suis trop froid .")
-    # plt.matshow(attentions.numpy())
-    print(pairs[0][0])
-    print(d.preProcess("Oi"))
     s.evaluateAndShowAttention(d.preProcess("Oi"))
 
     s.evaluateAndShowAttention(d.preProcess("vamos brincar?"))
